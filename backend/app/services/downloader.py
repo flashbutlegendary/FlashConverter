@@ -42,10 +42,10 @@ class YouTubeDownloader:
                 720
             )
 
-            # Uses already-merged video formats.
-            # Avoids FFmpeg merge requirements on Render.
+            # Uses already-merged video formats explicitly in MP4 container.
+            # Avoids FFmpeg merge requirements on Render and prevents .webm outputs.
             ydl_format = (
-                f"best[height<={height_limit}]/best"
+                f"best[ext=mp4][height<={height_limit}]/best[ext=mp4]/best"
             )
 
         outtmpl = str(
