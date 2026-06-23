@@ -1,4 +1,4 @@
 fastapi==0.111.0
 uvicorn==0.30.1
-yt-dlp
+yt-dlp @ git+https://github.com/yt-dlp/yt-dlp.git
 pydantic>=2.11.0
