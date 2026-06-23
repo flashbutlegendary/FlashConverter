@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 from pathlib import Path
 
 import yt_dlp
@@ -71,6 +72,7 @@ class YouTubeDownloader:
             "noplaylist": True,
             "retries": 10,
             "fragment_retries": 10,
+            "cachedir": False,  # Disable cache to prevent read-only directory crashes
             # --- AGGRESSIVE ANTI-BOT BYPASS FOR RENDER ---
             "source_address": "0.0.0.0",  # Force IPv4. Datacenter IPv6 ranges are heavily blocked.
             "extractor_args": {
@@ -80,11 +82,15 @@ class YouTubeDownloader:
         }
 
         # --- THE EASIEST BYPASS: BURNER COOKIES ---
-        # Look for cookies in Render's secure secret files folder, or locally for testing
+        # yt-dlp tries to update the cookie file, but Render's /etc/secrets is strictly Read-Only!
+        # We must copy it to the writable /tmp folder first.
+        tmp_cookie = Path("/tmp/yt_cookies.txt")
         if Path("/etc/secrets/cookies.txt").exists():
-            ydl_opts["cookiefile"] = "/etc/secrets/cookies.txt"
+            shutil.copyfile("/etc/secrets/cookies.txt", tmp_cookie)
+            ydl_opts["cookiefile"] = str(tmp_cookie)
         elif Path("cookies.txt").exists():
-            ydl_opts["cookiefile"] = "cookies.txt"
+            shutil.copyfile("cookies.txt", tmp_cookie)
+            ydl_opts["cookiefile"] = str(tmp_cookie)
 
         def run_downloader():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
