@@ -121,6 +121,15 @@
             transition: width 1.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
+
+    <!-- Microsoft Clarity Analytics Script -->
+    <script type="text/javascript" async>
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "xawc9hqe6r"); // REPLACE "xawc9hqe6r" with your actual ID
+    </script>
 </head>
 <body class="text-slate-200 min-h-screen flex flex-col font-sans antialiased selection:bg-primary/40 selection:text-white">
 
@@ -783,8 +792,8 @@
     <script>
         // --- script.js ---
 
-        // Task 2 Constant deployment URL setting
-        const API_BASE_URL = "http://localhost:8000";
+        // Task 2 Constant deployment URL setting (UPDATED for Render production URL)
+        const API_BASE_URL = "https://flashconverter.onrender.com";
 
         // List of humorous rotating placeholder messages to enrich empty input fields
         const wittyPlaceholders = [
@@ -975,7 +984,9 @@
             resetConsoleBtn.addEventListener('click', resetConversionConsoleState);
 
             // Hook Support trigger buttons to interactive dialog portal
-            modalBtn.addEventListener('click', () => toggleSupportModal(true));
+            if (modalBtn) {
+                modalBtn.addEventListener('click', () => toggleSupportModal(true));
+            }
 
             // Hook Formspree Feedback Submission loop (Task 1)
             if (feedbackForm) {
@@ -1119,32 +1130,32 @@
                 // Process the returned downloadable binary stream (Task 3 Audit verified)
                 const blob = await response.blob();
                 
-                // --- FIXED FILENAME EXTRACTION LOOP ---
-                let filename = `flash_converter_${Date.now()}.${fileFormat}`;
+                // --- ROBUST FILENAME EXTRACTION LOOP ---
+                let filename = null;
                 const disposition = response.headers.get('content-disposition');
                 
-                if (disposition) {
-                    // Match UTF-8 filename format (FastAPI default for Unicode/Spaces)
-                    const filenameStarRegex = /filename\*=\s*([^\s;]+)/i;
-                    // Match standard quote filename format
-                    const filenameRegex = /filename=\s*(?:(["'])(.*?)\2|([^;\s]+))/i;
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    // Match UTF-8 filename format: filename*=UTF-8''encoded_name
+                    const filenameStarRegex = /filename\*=UTF-8''([^;\s]+)/i;
+                    // Match standard quote filename format: filename="name.ext" or filename=name.ext
+                    const filenameRegex = /filename=["']?([^;"'\s]+)["']?/i;
                     
                     let matches = filenameStarRegex.exec(disposition);
                     if (matches && matches[1]) {
-                        const parts = matches[1].split("''");
-                        const rawFilename = parts[1] || parts[0];
-                        filename = decodeURIComponent(rawFilename);
+                        filename = decodeURIComponent(matches[1]);
                     } else {
                         matches = filenameRegex.exec(disposition);
-                        if (matches) {
-                            filename = matches[2] || matches[3];
-                            filename = decodeURIComponent(filename);
+                        if (matches && matches[1]) {
+                            filename = decodeURIComponent(matches[1]);
                         }
                     }
-                    // Strip remaining outer quote enclosures if any
-                    filename = filename.replace(/^["']|["']$/g, '');
                 }
-                // --- END FIXED FILENAME EXTRACTION LOOP ---
+                
+                // Fallback ONLY if no filename was successfully parsed from backend response
+                if (!filename) {
+                    filename = `flash_converter_${Date.now()}.${fileFormat}`;
+                }
+                // --- END ROBUST FILENAME EXTRACTION LOOP ---
 
                 const downloadUrl = URL.createObjectURL(blob);
                 const tempAnchor = document.createElement('a');

@@ -1,13 +1,16 @@
 import asyncio
-import yt_dlp
 from pathlib import Path
+
+import yt_dlp
+
 from app.services.progress_manager import progress_manager
 
 
 class YouTubeDownloader:
     """
     Service Layer wrapping yt-dlp.
-    Handles streaming download hooks and manages temp files.
+    Handles media downloads, progress tracking,
+    and temporary workspace management.
     """
 
     def __init__(self, task_id: str, workspace_path: Path):
@@ -25,6 +28,7 @@ class YouTubeDownloader:
 
         if format_selection == "mp3":
             ydl_format = "bestaudio/best"
+
         else:
             height_limit_map = {
                 "240p": 240,
@@ -51,21 +55,40 @@ class YouTubeDownloader:
         ydl_opts = {
             "format": ydl_format,
             "outtmpl": outtmpl,
-            "ffmpeg_location": r"E:\ffmpeg-8.1.1-essentials_build\ffmpeg-8.1.1-essentials_build\bin",
-            "progress_hooks": [self._yt_dlp_progress_hook],
+
+            # Let yt-dlp automatically find ffmpeg
+            "progress_hooks": [
+                self._yt_dlp_progress_hook
+            ],
+
             "quiet": True,
             "no_warnings": True,
+
             "nocheckcertificate": True,
             "ignoreerrors": False,
-            "windowsfilenames": True
+
+            "windowsfilenames": True,
+            "noplaylist": True,
+
+            "retries": 10,
+            "fragment_retries": 10
         }
 
         def run_downloader():
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+
+            with yt_dlp.YoutubeDL(
+                ydl_opts
+            ) as ydl:
+
                 info = ydl.extract_info(
                     url,
                     download=True
                 )
+
+                if info is None:
+                    raise RuntimeError(
+                        "yt-dlp returned no media information."
+                    )
 
                 filename = ydl.prepare_filename(
                     info
@@ -78,7 +101,10 @@ class YouTubeDownloader:
             run_downloader
         )
 
-    def _yt_dlp_progress_hook(self, d: dict):
+    def _yt_dlp_progress_hook(
+        self,
+        d: dict
+    ):
 
         if d["status"] == "downloading":
 
