@@ -75,10 +75,9 @@ class YouTubeDownloader:
             "cachedir": False,  # Disable cache to prevent read-only directory crashes
             # --- AGGRESSIVE ANTI-BOT BYPASS FOR RENDER ---
             "source_address": "0.0.0.0",  # Force IPv4. Datacenter IPv6 ranges are heavily blocked.
-            "extractor_args": {
-                # 'tv' client typically bypasses Proof-of-Work bot checks better than mobile alone
-                "youtube": ["player_client=tv,android,ios"]
-            }
+            
+            # NOTE: We removed the 'extractor_args' TV client hack here because 
+            # YouTube added DRM to TV clients. Since we have cookies, we don't need it!
         }
 
         # --- THE EASIEST BYPASS: BURNER COOKIES ---
