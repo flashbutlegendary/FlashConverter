@@ -65,7 +65,16 @@ class YouTubeDownloader:
             "windowsfilenames": True,
             "noplaylist": True,
             "retries": 10,
-            "fragment_retries": 10
+            "fragment_retries": 10,
+            # --- ANTI-BOT BYPASS FOR RENDER ---
+            "extractor_args": {
+                # Forces yt-dlp to use mobile APIs which bypass the web bot check
+                "youtube": ["player_client=android,ios,web"]
+            },
+            "http_headers": {
+                # Spoofs a standard residential browser user-agent
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            }
         }
 
         def run_downloader():
