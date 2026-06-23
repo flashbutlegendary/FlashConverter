@@ -16,7 +16,11 @@ class YouTubeDownloader:
 
     def __init__(self, task_id: str, workspace_path: Path):
         self.task_id = task_id
-        self.workspace_path = workspace_path
+        # --- RENDER READ-ONLY FILE SYSTEM FIX ---
+        # Render blocks saving files to the normal project folder. 
+        # We must force the workspace to use the writable /tmp directory.
+        self.workspace_path = Path("/tmp/flashconverter_downloads") / task_id
+        self.workspace_path.mkdir(parents=True, exist_ok=True)
 
     async def download_stream(
         self,
