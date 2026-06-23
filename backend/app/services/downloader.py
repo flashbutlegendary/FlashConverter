@@ -1,4 +1,5 @@
 import asyncio
+import os
 from pathlib import Path
 
 import yt_dlp
@@ -66,15 +67,20 @@ class YouTubeDownloader:
             "noplaylist": True,
             "retries": 10,
             "fragment_retries": 10,
-            # --- ANTI-BOT BYPASS FOR RENDER ---
+            # --- AGGRESSIVE ANTI-BOT BYPASS FOR RENDER ---
+            "source_address": "0.0.0.0",  # Force IPv4. Datacenter IPv6 ranges are heavily blocked.
             "extractor_args": {
-                # Restrict to strictly mobile clients. 
-                # 'web' client is removed because cloud IPs consistently fail its bot checks.
-                "youtube": ["player_client=android,ios"]
+                # 'tv' client typically bypasses Proof-of-Work bot checks better than mobile alone
+                "youtube": ["player_client=tv,android,ios"]
             }
-            # Custom http_headers (like Desktop User-Agents) are strictly omitted here
-            # to prevent fingerprint mismatches that instantly trigger bot detection.
         }
+
+        # --- THE EASIEST BYPASS: BURNER COOKIES ---
+        # Look for cookies in Render's secure secret files folder, or locally for testing
+        if Path("/etc/secrets/cookies.txt").exists():
+            ydl_opts["cookiefile"] = "/etc/secrets/cookies.txt"
+        elif Path("cookies.txt").exists():
+            ydl_opts["cookiefile"] = "cookies.txt"
 
         def run_downloader():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
