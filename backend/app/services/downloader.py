@@ -28,8 +28,7 @@ class YouTubeDownloader:
 
             height_limit = height_limit_map.get(quality, 720)
 
-            # Try already-merged formats first.
-            # Avoids FFmpeg merge requirements on Render.
+            # Use already-merged formats when possible
             ydl_format = f"best[height<={height_limit}]/best"
 
         outtmpl = str(self.workspace_path / "%(title)s.%(ext)s")
@@ -37,18 +36,31 @@ class YouTubeDownloader:
         ydl_opts = {
             "format": ydl_format,
             "outtmpl": outtmpl,
+            
+            # Render Secret File
+            "cookiefile": "/etc/secrets/cookies.txt",
+            
             "ffmpeg_location": "ffmpeg",
             "progress_hooks": [self._yt_dlp_progress_hook],
+            
             "quiet": True,
             "no_warnings": True,
             "nocheckcertificate": True,
             "ignoreerrors": False,
-            "windowsfilenames": True
+            "windowsfilenames": True,
+            
+            "noplaylist": True,
+            "retries": 10,
+            "fragment_retries": 10
         }
 
         def run_downloader():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
+                
+                if info is None:
+                    raise RuntimeError("yt-dlp returned no media information.")
+                    
                 filename = ydl.prepare_filename(info)
                 return Path(filename)
 
